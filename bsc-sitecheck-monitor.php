@@ -3,7 +3,7 @@
  * Plugin Name:       SiteCheck Monitor
  * Plugin URI:        https://bluestormcreative.com/
  * Description:       Runs a remote Sucuri SiteCheck malware/blocklist scan on a schedule and emails the results. No login-layer hooks, so it won't conflict with Wordfence 2FA.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 5.4
  * Requires PHP:      7.4
  * Author:            Blue Storm Creative
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Plugin {
 
-	const VERSION       = '1.0.0';
+	const VERSION       = '1.0.1';
 	const OPTION_KEY    = 'bsc_scm_settings';
 	const RESULT_KEY    = 'bsc_scm_last_result';
 	const CRON_HOOK     = 'bsc_scm_run_scan';
