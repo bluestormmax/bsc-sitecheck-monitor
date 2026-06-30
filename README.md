@@ -11,9 +11,11 @@ Built to replace the Sucuri Security plugin in setups where only the SiteCheck f
 - Surfaces status in a dashboard widget and an admin notice when an issue is detected.
 - Provides a manual **Scan now** button (forces a fresh, uncached scan).
 
-## Install
+## Install / update
 
-Copy the `bsc-sitecheck-monitor/` folder into `wp-content/plugins/` (or zip it and upload via **Plugins → Add New → Upload**), then activate. Configure under **Settings → SiteCheck Monitor**.
+Download the latest `bsc-sitecheck-monitor-<version>.zip` from the [Releases](../../releases) page (under **Assets** — _not_ the auto-generated "Source code" zip, which has the wrong folder name and bundles dev files). Then in wp-admin go to **Plugins → Add New → Upload Plugin**, choose the zip, and install. If an older copy is present, WordPress offers **Replace current with uploaded**. Activate, then configure under **Settings → SiteCheck Monitor**.
+
+(For local dev you can instead copy the `bsc-sitecheck-monitor/` folder straight into `wp-content/plugins/`.)
 
 ## Configuration
 
@@ -39,6 +41,28 @@ The response parser is deliberately defensive — it pulls warnings from the `MA
 - **Undocumented endpoint.** Sucuri can change or rate-limit it without notice.
 - **Remote-only.** SiteCheck sees what a browser sees, so it's an early-warning tripwire for visible infections and blocklisting — not a replacement for server-side scanning.
 - **Fleet use.** First cron runs are staggered by a random 1–60 min offset, and the cache is left on by default to avoid hammering the free endpoint across many sites. Keep "Fresh scan" off when deploying broadly.
+
+## Releasing a new version
+
+The version lives in two places in `bsc-sitecheck-monitor.php` — the `Version:` header and the `Plugin::VERSION` constant. Bump both, following [semver](https://semver.org/) (patch for fixes, minor for backward-compatible features, major for breaking changes), then cut a release:
+
+```bash
+# 1. Bump the version in both spots in bsc-sitecheck-monitor.php (e.g. 1.0.1 -> 1.0.2)
+
+# 2. Commit the bump
+git commit -am "Bump version to 1.0.2"
+git push
+
+# 3. Build the clean, uploadable zip (reads the version from the header)
+./build.sh                       # -> dist/bsc-sitecheck-monitor-1.0.2.zip
+
+# 4. Cut the release and attach the zip as a downloadable asset
+gh release create v1.0.2 dist/bsc-sitecheck-monitor-1.0.2.zip \
+  --title "v1.0.2" \
+  --notes "What changed in this release."
+```
+
+The release asset is then downloadable from the Releases page and ready to upload via wp-admin (see [Install / update](#install--update)). `build.sh` ships only an explicit allowlist of files (the plugin file + this README) so dev cruft and local config never end up in the zip; build output lands in the git-ignored `dist/` directory.
 
 ## Namespace
 
