@@ -32,6 +32,7 @@ final class Plugin {
 	const CRON_HOOK     = 'bsc_scm_run_scan';
 	const ENDPOINT      = 'https://sitecheck.sucuri.net/';
 	const NONCE_ACTION  = 'bsc_scm_scan_now';
+	const LOCK_KEY      = 'bsc_scm_scan_lock';
 
 	private static $instance = null;
 
@@ -171,6 +172,10 @@ final class Plugin {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'SiteCheck Monitor', 'bsc-sitecheck-monitor' ); ?></h1>
 
+			<?php if ( isset( $_GET['bsc_scm_throttled'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag. ?>
+				<div class="notice notice-warning is-dismissible"><p><?php esc_html_e( 'A scan ran less than a minute ago. Please wait before running another.', 'bsc-sitecheck-monitor' ); ?></p></div>
+			<?php endif; ?>
+
 			<?php $this->render_status_box( $result ); ?>
 
 			<form method="post" action="options.php">
@@ -281,10 +286,20 @@ final class Plugin {
 		}
 		check_admin_referer( self::NONCE_ACTION );
 
-		$this->run_scan( true );
+		// Throttle manual scans: a forced (clear=1) scan bypasses Sucuri's cache
+		// and spends the free quota, so block back-to-back runs for one minute.
+		$throttled = (bool) get_transient( self::LOCK_KEY );
+		if ( ! $throttled ) {
+			set_transient( self::LOCK_KEY, 1, MINUTE_IN_SECONDS );
+			$this->run_scan( true );
+		}
 
+		$notice = $throttled ? 'bsc_scm_throttled' : 'bsc_scm_scanned';
 		wp_safe_redirect( add_query_arg(
-			array( 'page' => 'bsc-sitecheck-monitor', 'bsc_scm_scanned' => '1' ),
+			array(
+				'page'  => 'bsc-sitecheck-monitor',
+				$notice => '1',
+			),
 			admin_url( 'options-general.php' )
 		) );
 		exit;
